@@ -1,0 +1,23 @@
+{
+  "name": "boolean-expression",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "main": "index.js",
+  "type": "module",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "expect": "^30.4.1"
+  },
+  "dependencies": {
+    "typescript": "^6.0.3"
+  }
+}
