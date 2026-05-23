@@ -41,15 +41,13 @@ export interface PropertyBuilder {
 
 export function empty(): ExpressionBuilder {
     return {
-        and: function (other: BooleanExpression | undefined): ExpressionBuilder {
+        and: (other: BooleanExpression | undefined): ExpressionBuilder => {
             throw new BuilderError(`Left side of and-expression (? and ${other}) is empty`);
         },
-        or: function (other: BooleanExpression | undefined): ExpressionBuilder {
-            throw new BuilderError(`Left side of and-expression (? and ${other}) is empty`);
+        or: (other: BooleanExpression | undefined): ExpressionBuilder => {
+            throw new BuilderError(`Left side of or-expression (? or ${other}) is empty`);
         },
-        done: function (): BooleanExpression {
-            return new EmptyExpression();
-        }
+        done: (): BooleanExpression => new EmptyExpression(),
     }
 }
 
