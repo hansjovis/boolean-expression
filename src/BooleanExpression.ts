@@ -60,13 +60,14 @@ export abstract class BooleanExpression {
     abstract toString(): string;
 }
 
-export class FalseExpression extends BooleanExpression {
+
+export class EmptyExpression extends BooleanExpression {
     evaluate(item: Item): boolean {
-        return false;
+        throw new Error("Empty expression cannot be evaluated.");
     }
 
-    toString() {
-        return "false";
+    toString(): string {
+        return "";
     }
 }
 

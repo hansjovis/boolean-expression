@@ -14,71 +14,36 @@ import {
     StringValue,
     NumberValue
 } from "./BooleanExpression.js";
+import { empty, expression, ExpressionBuilder } from "./builder.js";
 import { Token } from "./tokenize.js";
 
 class ParseError extends Error {}
 
-class BuildError extends Error {}
-
-class BooleanExpressionBuilder {
-    private currentExpression?: BooleanExpression;
-
-    setExpression(expression: BooleanExpression | undefined) {
-        this.currentExpression = expression;
-    }
-
-    and(expression: BooleanExpression | undefined) {
-        if (this.currentExpression === undefined)
-            throw new BuildError(`Left side of and-expression (undefined and ${expression}) is undefined`);
-        if (expression === undefined)
-            throw new BuildError(`Right side of and-expression (${this.currentExpression} and undefined) is undefined`);
-        this.currentExpression = new AndExpression(
-            this.currentExpression,
-            expression,
-        );
-    }
-
-    or(expression: BooleanExpression | undefined) {
-        if (this.currentExpression === undefined)
-            throw new BuildError(`Left side of or-expression (? or ${expression}) is undefined`);
-        if (expression === undefined)
-            throw new BuildError(`Right side of or-exporession (${this.currentExpression} or ?) is undefined`);
-        this.currentExpression = new OrExpression(
-            this.currentExpression,
-            expression,
-        );
-    }
-
-    build(): BooleanExpression | undefined {
-        return this.currentExpression;
-    }
-}
-
-export function parse(tokens: Token[]): BooleanExpression | undefined {
-    const builder = new BooleanExpressionBuilder();
+export function parse(tokens: Token[]): BooleanExpression {
+    let builder: ExpressionBuilder = empty();
     while (tokens.length > 0) {
         const token = tokens[0];
         switch (token.type) {
             case "PARENTHESIS_OPEN":
                 tokens.shift();
-                builder.setExpression(parse(tokens));
+                builder = expression(parse(tokens));
                 break;
             case "PARENTHESIS_CLOSED":
                 tokens.shift();
-                return builder.build();
+                return builder.done();
             case "AND":
                 tokens.shift();
-                builder.and(parse(tokens));
+                builder = builder.and(parse(tokens));
                 break;
             case "OR":
                 tokens.shift();
-                builder.or(parse(tokens));
+                builder = builder.or(parse(tokens));
                 break;
             case "PROP":
-                builder.setExpression(parsePropertyExpression(tokens));
+                builder = expression(parsePropertyExpression(tokens))
         }
     }
-    return builder.build();
+    return builder.done();
 }
 
 function parsePropertyExpression(tokens: Token[]): PropertyExpression {

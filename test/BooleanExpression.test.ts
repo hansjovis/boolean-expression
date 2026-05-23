@@ -24,7 +24,7 @@ describe("Boolean Expression", () => {
     it("throws an error when a string cannot be parsed", () => {
         const str = "(title = 'Post title') or and (author = 'hansjovis')";
         expect(() => BooleanExpression.parse(str)).toThrow(
-            "Left side of and-expression (undefined and author = 'hansjovis') is undefined"
+            "Left side of and-expression (? and author = 'hansjovis') is empty"
         );
 
         expect(() => BooleanExpression.parse("title =")).toThrow(
