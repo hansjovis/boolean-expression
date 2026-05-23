@@ -5,11 +5,27 @@ export type Item = Record<string, unknown>;
 
 export class Property {
     constructor(
-        public readonly name: string,
+        public readonly path: string[],
     ) {}
 
+    static parse(str: string): Property {
+        return new Property(str.split("."));
+    }
+
+    evaluate(item: Item): unknown {
+        let current: any = item;
+        for (const prop of this.path) {
+            if (current === undefined)
+                return undefined;
+            if (typeof current !== "object")
+                return undefined;
+            current = current[prop];
+        }
+        return current;
+    }
+
     toString() {
-        return this.name;
+        return this.path.join(".");
     }
 }
 
@@ -99,7 +115,7 @@ export abstract class PropertyExpression extends BooleanExpression {
     }
 
     evaluate(item: Item): boolean {
-        const prop = item[this.property.name];
+        const prop = this.property.evaluate(item);
         if (typeof prop === "number" || typeof prop === "string")
             return this.compare(prop, this.value.value);
         return false;

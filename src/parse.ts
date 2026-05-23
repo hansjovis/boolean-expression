@@ -118,7 +118,7 @@ function parseProperty(token: Token | undefined): Property {
     if (token.class !== "PROPERTY") {
         throw new ParseError(`Expected Property token, but got ${token.value}`);
     }
-    return new Property(token.value);
+    return Property.parse(token.value);
 }
 
 function parseOperator(token: Token | undefined): Operator {

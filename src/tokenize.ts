@@ -30,7 +30,7 @@ export type Token = {
 };
 
 // -- Token types
-const PROP = "\\w+";
+const PROP = "[\\w\.]+";
 
 const STRING = "'.+?'";
 const NUMBER = "\\d+";

@@ -6,17 +6,19 @@ import { BooleanExpression } from "../dist/BooleanExpression.js";
 
 describe("Boolean Expression", () => {
     it("can be parsed from a string", () => {
-        const str = "(title = 'Post title' and age <= 20) or author = 'hansjovis'";
+        const str = "(title = 'Post title' and age <= 20) or author.name = 'hansjovis'";
         const expression = BooleanExpression.parse(str);
         const item = {
             title: "Post title",
-            age: 12,
-            author: "Some guy"
+            age: 40,
+            author: {
+                name: "hansjovis"
+            }
         };
         console.log("Parsed expression:", expression);
         expect(expression.evaluate(item)).toBe(true);
         console.log("Expression as string:", expression.toString());
-        expect(expression.toString()).toEqual("((title = 'Post title' and age <= 20) or author = 'hansjovis')");
+        expect(expression.toString()).toEqual("((title = 'Post title' and age <= 20) or author.name = 'hansjovis')");
     });
 
     it("throws an error when a string cannot be parsed", () => {
