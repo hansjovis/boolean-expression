@@ -16,21 +16,29 @@ describe("Boolean Expression", () => {
         console.log("Parsed expression:", expression);
         expect(expression.evaluate(item)).toBe(true);
         console.log("Expression as string:", expression.toString());
-        expect(expression.toString()).toEqual("((title = Post title and age <= 20) or author = hansjovis)");
+        expect(expression.toString()).toEqual("((title = 'Post title' and age <= 20) or author = 'hansjovis')");
     });
 
     it("throws an error when a string cannot be parsed", () => {
         const str = "(title = 'Post title') or and (author = 'hansjovis')";
         expect(() => BooleanExpression.parse(str)).toThrow(
-            "Left side of and-expression (undefined and author = hansjovis) is undefined"
+            "Left side of and-expression (undefined and author = 'hansjovis') is undefined"
         );
 
         expect(() => BooleanExpression.parse("title =")).toThrow(
-            "Could not parse variable expression (title = undefined): Error: Expected Value token, but got undefined"
+            "Could not parse property expression (title = undefined): Error: Expected Value token, but got undefined"
         );
 
         expect(() => BooleanExpression.parse("none")).toThrow(
-            "Could not parse variable expression (none undefined undefined): Error: Expected Operator token, but got undefined"
+            "Could not parse property expression (none undefined undefined): Error: Expected Operator token, but got undefined"
+        );
+
+        expect(() => BooleanExpression.parse("this is not an expression")).toThrow(
+            "Could not parse property expression (this undefined undefined): Error: Expected Operator token, but got is"
+        );
+
+        expect(() => BooleanExpression.parse("'sjfbab")).toThrow(
+            "Could not find token class for token \"'\""
         );
     });
 });

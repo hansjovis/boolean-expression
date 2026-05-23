@@ -1,19 +1,36 @@
 enum TokenClass {
-    VARIABLE = "VARIABLE",
+    PROPERTY = "PROPERTY",
     VALUE = "VALUE",
     OPERATOR = "OPERATOR",
     PARENTHESIS = "PARENTHESIS",
     KEYWORD = "KEYWORD",
 };
 
+enum TokenType {
+    PROP = "PROP",
+    STRING = "STRING",
+    NUMBER = "NUMBER",
+    EQUALS = "EQUALS",
+    NEQ = "NEQ",
+    LT = "LT",
+    GT = "GT",
+    LTEQ = "LTEQ",
+    GTEQ = "GTEQ",
+    PARENTHESIS_OPEN = "PARENTHESIS_OPEN",
+    PARENTHESIS_CLOSED = "PARENTHESIS_CLOSED",
+    AND = "AND",
+    OR = "OR",
+    NOT = "NOT"
+}
+
 export type Token = {
     class: TokenClass,
-    type: string,
+    type: TokenType,
     value: string,
 };
 
 // -- Token types
-const VAR = "\\w+";
+const PROP = "\\w+";
 
 const STRING = "'.+?'";
 const NUMBER = "\\d+";
@@ -30,10 +47,10 @@ const PARENTHESIS_CLOSED = "\\)";
 
 const AND = "and";
 const OR = "or";
-const NOT = "not"
+const NOT = "not";
 
 // -- Token classes
-const VARIABLE = [VAR];
+const PROPERTY = [PROP];
 const VALUE = [STRING, NUMBER];
 const OPERATORS = [NEQ, LTEQ, GTEQ, LT, GT, EQUALS];
 const PARENTHESIS = [PARENTHESIS_OPEN, PARENTHESIS_CLOSED];
@@ -44,7 +61,7 @@ function join(strings: string[]): string {
 }
 
 const TOKENIZE_REGEX: RegExp = new RegExp(
-    `${join(VALUE)}|${join(VARIABLE)}|${join(OPERATORS)}|${join(PARENTHESIS)}|${join(KEYWORDS)}`,
+    `${join(VALUE)}|${join(PROPERTY)}|${join(OPERATORS)}|${join(PARENTHESIS)}|${join(KEYWORDS)}`,
 );
 
 function isClass(tokenClass: string[], str: string): boolean {
@@ -71,50 +88,50 @@ export function tokenize(str: string): Token[] {
             return parseParenthesisToken(value);
         if (isClass(VALUE, value))
             return parseValueToken(value);
-        if (isClass(VARIABLE, value))
-            return { class: TokenClass.VARIABLE, type: "VARIABLE", value };
+        if (isClass(PROPERTY, value))
+            return { class: TokenClass.PROPERTY, type: TokenType.PROP, value };
         throw new TokenizeError(`Could not find token class for token "${value}"`);
     });
 }
 
 function parseKeywordToken(value: string): Token {
     if (isType(AND, value))
-        return { class: TokenClass.KEYWORD, type: "AND", value };
+        return { class: TokenClass.KEYWORD, type: TokenType.AND, value };
     else if (isType(OR, value))
-        return { class: TokenClass.KEYWORD, type: "OR", value };
+        return { class: TokenClass.KEYWORD, type: TokenType.OR, value };
     else if (isType(NOT, value))
-        return { class: TokenClass.KEYWORD, type: "NOT", value };
+        return { class: TokenClass.KEYWORD, type: TokenType.NOT, value };
     throw new TokenizeError(`Unrecognised keyword token "${value}"`);
 }
 
 function parseOperatorToken(value: string): Token {
     if (isType(NEQ, value))
-        return { class: TokenClass.OPERATOR, type: "EQUALS", value };
+        return { class: TokenClass.OPERATOR, type: TokenType.NEQ, value };
     else if (isType(LTEQ, value))
-        return { class: TokenClass.OPERATOR, type: "LT", value };
+        return { class: TokenClass.OPERATOR, type: TokenType.LTEQ, value };
     else if (isType(GTEQ, value))
-        return { class: TokenClass.OPERATOR, type: "GT", value };
+        return { class: TokenClass.OPERATOR, type: TokenType.GTEQ, value };
     else if (isType(LT, value))
-        return { class: TokenClass.OPERATOR, type: "LTEQ", value };
+        return { class: TokenClass.OPERATOR, type: TokenType.LT, value };
     else if (isType(GT, value))
-        return { class: TokenClass.OPERATOR, type: "GTEQ", value };
+        return { class: TokenClass.OPERATOR, type: TokenType.GT, value };
     else if (isType(EQUALS, value))
-        return { class: TokenClass.OPERATOR, type: "NEQ", value };
+        return { class: TokenClass.OPERATOR, type: TokenType.EQUALS, value };
     throw new TokenizeError(`Unrecognized operator token "${value}"`);
 }
 
 function parseParenthesisToken(value: string): Token {
     if (isType(PARENTHESIS_OPEN, value))
-        return { class: TokenClass.PARENTHESIS, type: "PARENTHESIS_OPEN", value };
+        return { class: TokenClass.PARENTHESIS, type: TokenType.PARENTHESIS_OPEN, value };
     else if (isType(PARENTHESIS_CLOSED, value))
-        return { class: TokenClass.PARENTHESIS, type: "PARENTHESIS_CLOSED", value };
+        return { class: TokenClass.PARENTHESIS, type: TokenType.PARENTHESIS_CLOSED, value };
     throw new TokenizeError(`Unrecognized parenthesis token "${value}"`);
 }
 
 function parseValueToken(value: string): Token {
     if (isType(STRING, value))
-        return { class: TokenClass.VALUE, type: "STRING", value: value.replaceAll("'", "") };
+        return { class: TokenClass.VALUE, type: TokenType.STRING, value: value.replaceAll("'", "") };
     else if (isType(NUMBER, value)) 
-        return { class: TokenClass.VALUE, type: "NUMBER", value };
+        return { class: TokenClass.VALUE, type: TokenType.NUMBER, value };
     throw new TokenizeError(`Unrecognized value token "${value}"`);
 }

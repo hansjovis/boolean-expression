@@ -3,6 +3,36 @@ import { tokenize } from "./tokenize.js";
 
 export type Item = Record<string, unknown>;
 
+export class Property {
+    constructor(
+        public readonly name: string,
+    ) {}
+
+    toString() {
+        return this.name;
+    }
+}
+
+export class StringValue {
+    constructor(
+        public readonly value: string,
+    ) {}
+
+    toString() {
+        return `'${this.value}'`;
+    }
+}
+
+export class NumberValue {
+    constructor(
+        public readonly value: number,
+    ) {}
+
+    toString() {
+        return this.value;
+    }
+}
+
 export abstract class BooleanExpression {
     static parse(str: string): BooleanExpression | undefined {
         const tokens = tokenize(str);
@@ -58,87 +88,82 @@ export class OrExpression extends BooleanExpression {
     }
 }
 
-export type Variable = string;
 export type Operator = "=" | "!=" | "<" | ">" | ">=" | "<=";
-export type Value = string | number;
 
-export abstract class VariableExpression extends BooleanExpression {
+export abstract class PropertyExpression extends BooleanExpression {
     constructor(
-        readonly variable: Variable,
-        readonly value: Value,
+        readonly property: Property,
+        readonly value: StringValue | NumberValue,
     ) {
         super();
     }
-}
 
-export class EqualsExpression extends VariableExpression {
     evaluate(item: Item): boolean {
-        return item[this.variable] === this.value;
-    }
-
-    toString() {
-        return `${this.variable} = ${this.value}`;
-    }
-}
-
-export class NotEqualsExpression extends VariableExpression {
-    evaluate(item: Item): boolean {
-        return item[this.variable] !== this.value;
-    }
-
-    toString() {
-        return `${this.variable} != ${this.value}`;
-    }
-}
-
-export class SmallerThanExpression extends VariableExpression {
-    evaluate(item: Item): boolean {
-        const prop = item[this.variable];
+        const prop = item[this.property.name];
         if (typeof prop === "number" || typeof prop === "string")
-            return prop < this.value;
+            return this.compare(prop, this.value.value);
         return false;
     }
 
+    abstract compare(actual: string|number, expected: string|number): boolean;
+}
+
+export class EqualsExpression extends PropertyExpression {
+    compare(actual: string | number, expected: string | number): boolean {
+        return actual === expected;
+    }
+
     toString() {
-        return `${this.variable} < ${this.value}`;
+        return `${this.property} = ${this.value}`;
     }
 }
 
-export class BiggerThanExpression extends VariableExpression {
-    evaluate(item: Item): boolean {
-        const prop = item[this.variable];
-        if (typeof prop === "number" || typeof prop === "string")
-            return prop > this.value;
-        return false;
+export class NotEqualsExpression extends PropertyExpression {
+    compare(actual: string | number, expected: string | number): boolean {
+        return actual !== expected;
     }
 
     toString() {
-        return `${this.variable} > ${this.value}`;
+        return `${this.property} != ${this.value}`;
     }
 }
 
-export class SmallerThanOrEqualToExpression extends VariableExpression {
-    evaluate(item: Item): boolean {
-        const prop = item[this.variable];
-        if (typeof prop === "number" || typeof prop === "string")
-            return prop <= this.value;
-        return false;
+export class SmallerThanExpression extends PropertyExpression {
+    compare(actual: string | number, expected: string | number): boolean {
+        return actual < expected;
     }
 
     toString() {
-        return `${this.variable} <= ${this.value}`;
+        return `${this.property} < ${this.value}`;
     }
 }
 
-export class BiggerThanOrEqualToExpression extends VariableExpression {
-    evaluate(item: Item): boolean {
-        const prop = item[this.variable];
-        if (typeof prop === "number" || typeof prop === "string")
-            return prop >= this.value;
-        return false;
+export class BiggerThanExpression extends PropertyExpression {
+    compare(actual: string | number, expected: string | number): boolean {
+        return actual > expected;
     }
 
     toString() {
-        return `${this.variable} >= ${this.value}`;
+        return `${this.property} > ${this.value}`;
+    }
+}
+
+export class SmallerThanOrEqualToExpression extends PropertyExpression {
+    compare(actual: string | number, expected: string | number): boolean {
+        return actual <= expected;
+    }
+
+    toString() {
+        return `${this.property} <= ${this.value}`;
+    }
+}
+
+export class BiggerThanOrEqualToExpression extends PropertyExpression {
+    compare(actual: string | number, expected: string | number): boolean {
+        return actual >= expected;
+    }
+
+    toString() {
+        return `${this.property} >= ${this.value}`;
     }
 }

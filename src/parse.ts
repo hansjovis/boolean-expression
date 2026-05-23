@@ -1,4 +1,19 @@
-import { AndExpression, BiggerThanExpression, BiggerThanOrEqualToExpression, BooleanExpression, EqualsExpression, FalseExpression, NotEqualsExpression, Operator, OrExpression, SmallerThanExpression, SmallerThanOrEqualToExpression, Value, Variable, VariableExpression } from "./BooleanExpression.js";
+import { 
+    AndExpression, 
+    BiggerThanExpression, 
+    BiggerThanOrEqualToExpression, 
+    BooleanExpression, 
+    EqualsExpression, 
+    NotEqualsExpression, 
+    Operator, 
+    OrExpression, 
+    SmallerThanExpression, 
+    SmallerThanOrEqualToExpression, 
+    PropertyExpression, 
+    Property,
+    StringValue,
+    NumberValue
+} from "./BooleanExpression.js";
 import { Token } from "./tokenize.js";
 
 class ParseError extends Error {}
@@ -59,24 +74,24 @@ export function parse(tokens: Token[]): BooleanExpression | undefined {
                 tokens.shift();
                 builder.or(parse(tokens));
                 break;
-            case "VARIABLE":
-                builder.setExpression(parseVariableExpression(tokens));
+            case "PROP":
+                builder.setExpression(parsePropertyExpression(tokens));
         }
     }
     return builder.build();
 }
 
-function parseVariableExpression(tokens: Token[]): VariableExpression {
-    let variable: Variable | undefined = undefined;
+function parsePropertyExpression(tokens: Token[]): PropertyExpression {
+    let variable: Property | undefined = undefined;
     let operator: Operator | undefined = undefined;
-    let value: Value | undefined = undefined;
+    let value: StringValue | NumberValue | undefined = undefined;
     try {
-        variable = parseVariable(tokens.shift());
+        variable = parseProperty(tokens.shift());
         operator = parseOperator(tokens.shift());
         value = parseValue(tokens.shift());
     } catch (error) {
         throw new ParseError(
-            `Could not parse variable expression (${variable} ${operator} ${value}): ${error}`
+            `Could not parse property expression (${variable} ${operator} ${value}): ${error}`
         );
     }
 
@@ -96,14 +111,14 @@ function parseVariableExpression(tokens: Token[]): VariableExpression {
     }
 }
 
-function parseVariable(token: Token | undefined): Variable {
+function parseProperty(token: Token | undefined): Property {
     if (token === undefined) {
-        throw new ParseError("Expected Variable token, but got undefined");
+        throw new ParseError("Expected Property token, but got undefined");
     }
-    if (token.class !== "VARIABLE") {
-        throw new ParseError(`Expected Variable token, but got ${token.value}`);
+    if (token.class !== "PROPERTY") {
+        throw new ParseError(`Expected Property token, but got ${token.value}`);
     }
-    return token.value;
+    return new Property(token.value);
 }
 
 function parseOperator(token: Token | undefined): Operator {
@@ -116,7 +131,7 @@ function parseOperator(token: Token | undefined): Operator {
     return token.value as Operator;
 }
 
-function parseValue(token: Token | undefined): Value {
+function parseValue(token: Token | undefined): StringValue | NumberValue {
     if (token === undefined) {
         throw new ParseError("Expected Value token, but got undefined");
     }
@@ -125,9 +140,9 @@ function parseValue(token: Token | undefined): Value {
     }
     switch(token.type) {
         case "STRING":
-            return token.value;
+            return new StringValue(token.value);
         case "NUMBER":
-            return parseFloat(token.value);
+            return new NumberValue(parseFloat(token.value));
         default:
             throw new ParseError(
                 `Invalid value type for token ${JSON.stringify(token)}, expected one of ["STRING", "NUMBER"]`
