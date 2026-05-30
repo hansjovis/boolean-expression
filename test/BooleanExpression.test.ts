@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import expect from "expect";
 
 import { BooleanExpression } from "../dist/BooleanExpression.js";
+import { and, or, property } from "../dist/builder.js";
 
 describe("Boolean Expression", () => {
     it("can be parsed from a string", () => {
@@ -16,9 +17,9 @@ describe("Boolean Expression", () => {
             }
         };
         console.log("Parsed expression:", expression);
-        expect(expression.evaluate(item)).toBe(true);
-        console.log("Expression as string:", expression.toString());
-        expect(expression.toString()).toEqual("((title = 'Post title' and age <= 20) or author.name = 'hansjovis')");
+        expect(expression?.evaluate(item)).toBe(true);
+        console.log("Expression as string:", expression?.toString());
+        expect(expression?.toString()).toEqual("((title = 'Post title' and age <= 20) or author.name = 'hansjovis')");
     });
 
     it("throws an error when a string cannot be parsed", () => {
@@ -43,4 +44,13 @@ describe("Boolean Expression", () => {
             "Could not find token class for token \"'\""
         );
     });
+
+    it("can be built using the builder API", () => {
+        const expression = property("author").shouldBeEqualToOneOf(["astrid", "bernhard", "chris"]).done();
+
+        expect(expression.evaluate({ author: "astrid" })).toEqual(true);
+        expect(expression.evaluate({ author: "bernhard" })).toEqual(true);
+        expect(expression.evaluate({ author: "chris" })).toEqual(true);
+        expect(expression.evaluate({ author: "hansjovis" })).toEqual(false);
+    })
 });

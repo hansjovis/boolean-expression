@@ -4,6 +4,7 @@
         "module": "nodenext",
         "rootDir": "./src",
         "outDir": "./dist",
+        "declaration": true
     },
     "include": ["src"],
 }

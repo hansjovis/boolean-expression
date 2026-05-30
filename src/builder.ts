@@ -25,8 +25,8 @@ function parseValue(value: string|number): StringValue | NumberValue {
 }
 
 export interface ExpressionBuilder {
-    and: (other: BooleanExpression|undefined) => ExpressionBuilder,
-    or: (other: BooleanExpression|undefined) => ExpressionBuilder,
+    and: (other: BooleanExpression) => ExpressionBuilder,
+    or: (other: BooleanExpression) => ExpressionBuilder,
     done: () => BooleanExpression,
 }
 
@@ -37,6 +37,7 @@ export interface PropertyBuilder {
     shouldBeSmallerThan: (value: string|number) => ExpressionBuilder,
     shouldBeBiggerThanOrEqualTo: (value: string|number) => ExpressionBuilder,
     shouldBeSmallerThanOrEqualTo: (value: string|number) => ExpressionBuilder,
+    shouldBeEqualToOneOf: (values: string[] | number[]) => ExpressionBuilder,
 }
 
 export function empty(): ExpressionBuilder {
@@ -60,13 +61,14 @@ export function property(path: string): PropertyBuilder {
         shouldBeSmallerThan: (value: string|number) => shouldBeSmallerThan(prop, value),
         shouldBeBiggerThanOrEqualTo: (value: string|number) => shouldBeBiggerThanOrEqualTo(prop, value),
         shouldBeSmallerThanOrEqualTo: (value: string|number) => shouldBeSmallerThanOrEqualTo(prop, value),
+        shouldBeEqualToOneOf: (values: string[] | number[]) => shouldBeEqualToOneOf(prop, values),
     };
 }
 
 export function expression(expr: BooleanExpression): ExpressionBuilder {
     return {
-        and: (other: BooleanExpression | undefined) => and(expr, other),
-        or: (other: BooleanExpression | undefined) => or(expr, other),
+        and: (other: BooleanExpression) => and(expr, other),
+        or: (other: BooleanExpression) => or(expr, other),
         done: () => expr,
     };
 }
@@ -107,26 +109,20 @@ export function shouldBeSmallerThanOrEqualTo(prop: Property, value: string|numbe
     );
 }
 
-export function and(left: BooleanExpression|undefined, right: BooleanExpression|undefined) {
-    if (left === undefined) {
-        throw new BuilderError(`Left side of and-expression () is undefined.`);
-    }
-    if (right === undefined) {
-        throw new BuilderError(`Right side of and-expression () is undefined.`);
-    }
-    return expression(
-        new AndExpression(left, right)
+export function shouldBeEqualToOneOf(prop: Property, values: string[] | number[]) {
+    return or(
+        ...values.map((value: string|number) => new EqualsExpression(prop, parseValue(value)))
     );
 }
 
-export function or(left: BooleanExpression|undefined, right: BooleanExpression|undefined) {
-    if (left === undefined) {
-        throw new BuilderError(`Left side of or-expression (${left} or ${right}) is undefined.`);
-    }
-    if (right === undefined) {
-        throw new BuilderError(`Right side of or-expression (${left} or ${right}) is undefined.`);
-    }
+export function and(...expressions: BooleanExpression[]) {
     return expression(
-        new OrExpression(left, right)
+        expressions.reduce((left, right) => new AndExpression(left, right)),
+    );
+}
+
+export function or(...expressions: BooleanExpression[]) {
+    return expression(
+        expressions.reduce((prev, next) => new OrExpression(prev, next))
     );
 }
