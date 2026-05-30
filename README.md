@@ -53,13 +53,6 @@ Use this API if you need more fine-grained, procedural control over the expressi
 
 ## Development
 
-### Versions
-| Name | Version |
-|------|---------|
-| Node |    |
-| NPM  |    |
-| TypeScript |   |
-
 ### Development environment setup
 Make sure that the right versions of Node and NPM are installed.
 
