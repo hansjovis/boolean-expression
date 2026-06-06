@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import expect from "expect";
 
 import { BooleanExpression } from "../dist/BooleanExpression.js";
-import { and, or, property } from "../dist/builder.js";
+import { property } from "../dist/builder.js";
 
 describe("Boolean Expression", () => {
     it("can be parsed from a string", () => {

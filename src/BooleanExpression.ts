@@ -13,9 +13,10 @@ export class Property {
     }
 
     evaluate(item: Item): unknown {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let current: any = item;
         for (const prop of this.path) {
-            if (current === undefined)
+            if (current === undefined || current === null)
                 return undefined;
             if (typeof current !== "object")
                 return undefined;
@@ -79,7 +80,7 @@ export abstract class BooleanExpression {
 
 
 export class EmptyExpression extends BooleanExpression {
-    evaluate(item: Item): boolean {
+    evaluate(): boolean {
         throw new Error("Empty expression cannot be evaluated.");
     }
 

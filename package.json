@@ -12,12 +12,16 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "node --test"
+    "test": "node --test",
+    "lint": "eslint src/"
   },
   "devDependencies": {
-    "expect": "^30.4.1"
-  },
-  "dependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.4.1",
+    "expect": "^30.4.1",
+    "globals": "^17.6.0",
+    "jiti": "^2.7.0",
+    "typescript-eslint": "^8.60.1",
     "typescript": "^6.0.3"
   }
 }
