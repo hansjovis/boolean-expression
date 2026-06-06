@@ -11,7 +11,8 @@ import {
     Property, 
     SmallerThanExpression, 
     SmallerThanOrEqualToExpression, 
-    StringValue 
+    StringValue,
+    ArrayValue, 
 } from "./BooleanExpression.js";
 
 export class BuilderError extends Error {}
@@ -40,6 +41,11 @@ export interface PropertyBuilder {
     shouldBeEqualToOneOf: (values: string[] | number[]) => ExpressionBuilder,
 }
 
+export interface ArrayBuilder {
+    push: (value: string|number) => ArrayBuilder,
+    done: () => ArrayValue,
+}
+
 export function empty(): ExpressionBuilder {
     return {
         and: (other: BooleanExpression | undefined): ExpressionBuilder => {
@@ -62,6 +68,13 @@ export function property(path: string): PropertyBuilder {
         shouldBeBiggerThanOrEqualTo: (value: string|number) => shouldBeBiggerThanOrEqualTo(prop, value),
         shouldBeSmallerThanOrEqualTo: (value: string|number) => shouldBeSmallerThanOrEqualTo(prop, value),
         shouldBeEqualToOneOf: (values: string[] | number[]) => shouldBeEqualToOneOf(prop, values),
+    };
+}
+
+export function array(values: (StringValue|NumberValue)[] = []): ArrayBuilder {
+    return {
+        push: (value: string|number) => array([parseValue(value), ...values]),
+        done: () => new ArrayValue(values),
     };
 }
 

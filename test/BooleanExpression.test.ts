@@ -7,7 +7,7 @@ import { and, or, property } from "../dist/builder.js";
 
 describe("Boolean Expression", () => {
     it("can be parsed from a string", () => {
-        const str = "(title = 'Post title' and age <= 20) or author.name = 'hansjovis'";
+        const str = "(title in ['Post title', 'Other title'] and age <= 20) or author.name = 'hansjovis'";
         const expression = BooleanExpression.parse(str);
         const item = {
             title: "Post title",
@@ -19,7 +19,7 @@ describe("Boolean Expression", () => {
         console.log("Parsed expression:", expression);
         expect(expression?.evaluate(item)).toBe(true);
         console.log("Expression as string:", expression?.toString());
-        expect(expression?.toString()).toEqual("((title = 'Post title' and age <= 20) or author.name = 'hansjovis')");
+        expect(expression?.toString()).toEqual("((title in ['Other title', 'Post title'] and age <= 20) or author.name = 'hansjovis')");
     });
 
     it("throws an error when a string cannot be parsed", () => {

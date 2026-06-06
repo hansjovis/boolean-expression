@@ -1,20 +1,19 @@
 import { 
-    AndExpression, 
     BiggerThanExpression, 
     BiggerThanOrEqualToExpression, 
     BooleanExpression, 
     EqualsExpression, 
     NotEqualsExpression, 
-    Operator, 
-    OrExpression, 
+    Operator,
     SmallerThanExpression, 
-    SmallerThanOrEqualToExpression, 
-    PropertyExpression, 
+    SmallerThanOrEqualToExpression,
     Property,
     StringValue,
-    NumberValue
+    NumberValue,
+    InExpression,
+    ArrayValue
 } from "./BooleanExpression.js";
-import { empty, expression, ExpressionBuilder } from "./builder.js";
+import { array, empty, expression, ExpressionBuilder } from "./builder.js";
 import { Token } from "./tokenize.js";
 
 class ParseError extends Error {}
@@ -46,17 +45,27 @@ export function parse(tokens: Token[]): BooleanExpression {
     return builder.done();
 }
 
-function parsePropertyExpression(tokens: Token[]): PropertyExpression {
+function parsePropertyExpression(tokens: Token[]): BooleanExpression {
     let variable: Property | undefined = undefined;
     let operator: Operator | undefined = undefined;
-    let value: StringValue | NumberValue | undefined = undefined;
+    let value: StringValue | NumberValue | ArrayValue | undefined = undefined;
     try {
         variable = parseProperty(tokens.shift());
         operator = parseOperator(tokens.shift());
-        value = parseValue(tokens.shift());
+        value = parseValue(tokens);
     } catch (error) {
         throw new ParseError(
             `Could not parse property expression (${variable} ${operator} ${value}): ${error}`
+        );
+    }
+
+    if (value instanceof ArrayValue) {
+        if (operator === "in") {
+            return new InExpression(variable, value);
+        }
+        // TODO: Support other (comparison) operators?
+        throw new ParseError(
+            `Operator ${operator} is not supported for arrays in the expression '${variable} ${operator} ${value}'.`
         );
     }
 
@@ -73,6 +82,10 @@ function parsePropertyExpression(tokens: Token[]): PropertyExpression {
             return new SmallerThanOrEqualToExpression(variable, value);
         case ">=":
             return new BiggerThanOrEqualToExpression(variable, value);
+        case "in":
+            throw new ParseError(
+                `Operator 'in' is not supported for string or number values ('${variable} ${operator} ${value}').`
+            );
     }
 }
 
@@ -96,7 +109,8 @@ function parseOperator(token: Token | undefined): Operator {
     return token.value as Operator;
 }
 
-function parseValue(token: Token | undefined): StringValue | NumberValue {
+function parseValue(tokens: Token[]): StringValue | NumberValue | ArrayValue {
+    const token = tokens.shift();
     if (token === undefined) {
         throw new ParseError("Expected Value token, but got undefined");
     }
@@ -108,9 +122,26 @@ function parseValue(token: Token | undefined): StringValue | NumberValue {
             return new StringValue(token.value);
         case "NUMBER":
             return new NumberValue(parseFloat(token.value));
+        case "ARRAY_OPEN":
+            return parseArray(tokens);
         default:
             throw new ParseError(
                 `Invalid value type for token ${JSON.stringify(token)}, expected one of ["STRING", "NUMBER"]`
             );
     }
+}
+
+function parseArray(tokens: Token[]): ArrayValue {
+    let token: Token|undefined = tokens[0];
+    let arrayBuilder = array();
+    while (token && token.type !== "ARRAY_CLOSED") {
+        const value = tokens.shift();
+        if (value === undefined || (value.type !== "STRING" && value.type !== "NUMBER")) {
+            throw new ParseError(`Expected a valid value token when parsing an array, but got ${JSON.stringify(value)}.`);
+        }
+        arrayBuilder = arrayBuilder.push(value.value);
+
+        token = tokens.shift();
+    }
+    return arrayBuilder.done();
 }

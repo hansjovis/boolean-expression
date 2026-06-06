@@ -34,6 +34,13 @@ export class StringValue {
         public readonly value: string,
     ) {}
 
+    static parse(str: string): StringValue {
+        if (str.match(/^'.*'$/) === null) {
+            throw new Error(`Could not parse string ${str} to a StringValue.`);
+        }
+        return new StringValue(str.slice(1,-1));
+    }
+
     toString() {
         return `'${this.value}'`;
     }
@@ -46,6 +53,16 @@ export class NumberValue {
 
     toString() {
         return this.value;
+    }
+}
+
+export class ArrayValue {
+    constructor(
+        public readonly value: (StringValue|NumberValue)[]
+    ) {}
+
+    toString() {
+        return `[${this.value.map(it => it.toString()).join(", ")}]`;
     }
 }
 
@@ -105,9 +122,9 @@ export class OrExpression extends BooleanExpression {
     }
 }
 
-export type Operator = "=" | "!=" | "<" | ">" | ">=" | "<=";
+export type Operator = "=" | "!=" | "<" | ">" | ">=" | "<=" | "in";
 
-export abstract class PropertyExpression extends BooleanExpression {
+export abstract class CompareExpression extends BooleanExpression {
     constructor(
         readonly property: Property,
         readonly value: StringValue | NumberValue,
@@ -125,7 +142,7 @@ export abstract class PropertyExpression extends BooleanExpression {
     abstract compare(actual: string|number, expected: string|number): boolean;
 }
 
-export class EqualsExpression extends PropertyExpression {
+export class EqualsExpression extends CompareExpression {
     compare(actual: string | number, expected: string | number): boolean {
         return actual === expected;
     }
@@ -135,7 +152,7 @@ export class EqualsExpression extends PropertyExpression {
     }
 }
 
-export class NotEqualsExpression extends PropertyExpression {
+export class NotEqualsExpression extends CompareExpression {
     compare(actual: string | number, expected: string | number): boolean {
         return actual !== expected;
     }
@@ -145,7 +162,7 @@ export class NotEqualsExpression extends PropertyExpression {
     }
 }
 
-export class SmallerThanExpression extends PropertyExpression {
+export class SmallerThanExpression extends CompareExpression {
     compare(actual: string | number, expected: string | number): boolean {
         return actual < expected;
     }
@@ -155,7 +172,7 @@ export class SmallerThanExpression extends PropertyExpression {
     }
 }
 
-export class BiggerThanExpression extends PropertyExpression {
+export class BiggerThanExpression extends CompareExpression {
     compare(actual: string | number, expected: string | number): boolean {
         return actual > expected;
     }
@@ -165,7 +182,7 @@ export class BiggerThanExpression extends PropertyExpression {
     }
 }
 
-export class SmallerThanOrEqualToExpression extends PropertyExpression {
+export class SmallerThanOrEqualToExpression extends CompareExpression {
     compare(actual: string | number, expected: string | number): boolean {
         return actual <= expected;
     }
@@ -175,12 +192,31 @@ export class SmallerThanOrEqualToExpression extends PropertyExpression {
     }
 }
 
-export class BiggerThanOrEqualToExpression extends PropertyExpression {
+export class BiggerThanOrEqualToExpression extends CompareExpression {
     compare(actual: string | number, expected: string | number): boolean {
         return actual >= expected;
     }
 
     toString() {
         return `${this.property} >= ${this.value}`;
+    }
+}
+
+export class InExpression extends BooleanExpression {
+    constructor(
+        public readonly property: Property,
+        public readonly values: ArrayValue,
+    ) {
+        super();
+    }
+
+    evaluate(item: Item): boolean {
+        return this.values.value.some(
+            it => this.property.evaluate(item) === it.value
+        );
+    }
+
+    toString(): string {
+        return `${this.property} in [${this.values.value.map(it => it.toString()).join(", ")}]`;
     }
 }
