@@ -1,28 +1,65 @@
 import { parse } from "./parse.js";
 import { tokenize } from "./tokenize.js";
 
-export type Item = Record<string, unknown>;
+export interface Equatable<T> {
+    equals(value: T): boolean;
+}
 
-export class Property {
+export enum ComparisonResult {
+    SMALLER_THAN = -1,
+    LARGER_THAN = 1,
+    EQUAL = 0,
+}
+
+export interface Comparable<T> {
+    compare(value: T): ComparisonResult;
+}
+
+class PrimitiveValueObject implements Equatable<PrimitiveValueObject>, Comparable<PrimitiveValueObject> {
+    constructor(
+        public readonly value: string | number,
+    ) {}
+
+    equals(value: PrimitiveValueObject): boolean {
+        return value.value === this.value;
+    }
+
+    compare(value: PrimitiveValueObject): ComparisonResult {
+        if (value.value < this.value)
+            return -1;
+        else if (value.value > this.value)
+            return 1;
+        else
+            return 0;
+    }
+}
+
+export class Property<T extends (Comparable<T> | Equatable<T>)> {
     constructor(
         public readonly path: string[],
     ) {}
 
-    static parse(str: string): Property {
+    static parse<T extends Comparable<T> | Equatable<T>>(str: string): Property<T> {
         return new Property(str.split("."));
     }
 
-    evaluate(item: Item): unknown {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let current: any = item;
-        for (const prop of this.path) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    evaluate(item: any): ( Comparable<T> | Equatable<T> ) | undefined {
+        let current = item;
+        for (const key of this.path) {
             if (current === undefined || current === null)
                 return undefined;
-            if (typeof current !== "object")
+            if (typeof current === "object" && Object.hasOwn(current, key))
+                current = current[key];
+            else
                 return undefined;
-            current = current[prop];
         }
-        return current;
+
+        // Wrap primitive values in a value object to make comparison possible by means of the Equatable and Comparable interfaces.
+        if (typeof current === "string" || typeof current === "number")
+            current = new PrimitiveValueObject(current);
+
+        return current as T;
     }
 
     toString() {
@@ -73,7 +110,7 @@ export abstract class BooleanExpression {
         return parse(tokens);
     }
 
-    abstract evaluate(item: Item): boolean;
+    abstract evaluate(item: unknown): boolean;
 
     abstract toString(): string;
 }
@@ -97,7 +134,7 @@ export class AndExpression extends BooleanExpression {
         super();
     }
 
-    evaluate(item: Item): boolean {
+    evaluate(item: unknown): boolean {
         return this.left.evaluate(item) && this.right.evaluate(item);
     }
 
@@ -114,7 +151,7 @@ export class OrExpression extends BooleanExpression {
         super();
     }
 
-    evaluate(item: Item): boolean {
+    evaluate(item: unknown): boolean {
         return this.left.evaluate(item) || this.right.evaluate(item);
     }
 
@@ -125,27 +162,31 @@ export class OrExpression extends BooleanExpression {
 
 export type Operator = "=" | "!=" | "<" | ">" | ">=" | "<=" | "in";
 
-export abstract class CompareExpression extends BooleanExpression {
+export abstract class CompareExpression<T extends Equatable<T> | Comparable<T>> extends BooleanExpression {
     constructor(
-        readonly property: Property,
+        readonly property: Property<Equatable<T> | Comparable<T>>,
         readonly value: StringValue | NumberValue,
     ) {
         super();
     }
 
-    evaluate(item: Item): boolean {
+    evaluate(item: unknown): boolean {
         const prop = this.property.evaluate(item);
-        if (typeof prop === "number" || typeof prop === "string")
-            return this.compare(prop, this.value.value);
-        return false;
+
+        if (prop === undefined)
+            return false;
+
+        const ValueClass = Object.getPrototypeOf(prop).constructor;
+
+        return this.compare(prop, new ValueClass(this.value.value));
     }
 
-    abstract compare(actual: string|number, expected: string|number): boolean;
+    abstract compare(actual: Equatable<T> | Comparable<T>, expected: T): boolean;
 }
 
-export class EqualsExpression extends CompareExpression {
-    compare(actual: string | number, expected: string | number): boolean {
-        return actual === expected;
+export class EqualsExpression<T extends Equatable<T>> extends CompareExpression<T> {
+    compare(actual: Equatable<T>, expected: T): boolean {
+        return actual.equals(expected);
     }
 
     toString() {
@@ -153,9 +194,9 @@ export class EqualsExpression extends CompareExpression {
     }
 }
 
-export class NotEqualsExpression extends CompareExpression {
-    compare(actual: string | number, expected: string | number): boolean {
-        return actual !== expected;
+export class NotEqualsExpression<T extends Equatable<T>> extends CompareExpression<T> {
+    compare(actual: Equatable<T>, expected: T): boolean {
+        return actual.equals(expected) === false;
     }
 
     toString() {
@@ -163,9 +204,9 @@ export class NotEqualsExpression extends CompareExpression {
     }
 }
 
-export class SmallerThanExpression extends CompareExpression {
-    compare(actual: string | number, expected: string | number): boolean {
-        return actual < expected;
+export class SmallerThanExpression<T extends Comparable<T>> extends CompareExpression<T> {
+    compare(actual: Comparable<T>, expected: T): boolean {
+        return actual.compare(expected) < 0;
     }
 
     toString() {
@@ -173,9 +214,9 @@ export class SmallerThanExpression extends CompareExpression {
     }
 }
 
-export class BiggerThanExpression extends CompareExpression {
-    compare(actual: string | number, expected: string | number): boolean {
-        return actual > expected;
+export class BiggerThanExpression<T extends Comparable<T>> extends CompareExpression<T> {
+    compare(actual: Comparable<T>, expected: T): boolean {
+        return actual.compare(expected) > 0;
     }
 
     toString() {
@@ -183,9 +224,9 @@ export class BiggerThanExpression extends CompareExpression {
     }
 }
 
-export class SmallerThanOrEqualToExpression extends CompareExpression {
-    compare(actual: string | number, expected: string | number): boolean {
-        return actual <= expected;
+export class SmallerThanOrEqualToExpression<T extends Comparable<T>> extends CompareExpression<T> {
+    compare(actual: Comparable<T>, expected: T): boolean {
+        return actual.compare(expected) <= 0;
     }
 
     toString() {
@@ -193,9 +234,9 @@ export class SmallerThanOrEqualToExpression extends CompareExpression {
     }
 }
 
-export class BiggerThanOrEqualToExpression extends CompareExpression {
-    compare(actual: string | number, expected: string | number): boolean {
-        return actual >= expected;
+export class BiggerThanOrEqualToExpression<T extends Comparable<T>> extends CompareExpression<T> {
+    compare(actual: Comparable<T>, expected: T): boolean {
+        return actual.compare(expected) >= 0;
     }
 
     toString() {
@@ -203,18 +244,29 @@ export class BiggerThanOrEqualToExpression extends CompareExpression {
     }
 }
 
-export class InExpression extends BooleanExpression {
+export class InExpression<T extends Equatable<T>> extends BooleanExpression {
     constructor(
-        public readonly property: Property,
+        public readonly property: Property<T>,
         public readonly values: ArrayValue,
     ) {
         super();
     }
 
-    evaluate(item: Item): boolean {
-        return this.values.value.some(
-            it => this.property.evaluate(item) === it.value
-        );
+    evaluate(item: Equatable<T>): boolean {
+        const prop = this.property.evaluate(item);
+
+        if (prop === undefined) {
+            return false;
+        }
+
+        const ValueClass = Object.getPrototypeOf(prop).constructor;
+
+        return this.values.value.some(it => {
+            const result = this.property.evaluate(item);
+            if (result) {
+                return new ValueClass(it.value).equals(result);
+            }
+        });
     }
 
     toString(): string {

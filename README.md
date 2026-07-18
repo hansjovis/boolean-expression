@@ -31,10 +31,10 @@ See also [the builder documentation](./docs/builder-api.md).
 const expression = property("title")
     .shouldBeEqualTo("Post title")
     .and(
-        property("age").shouldBeSmallerThanOrEqualTo(20)
+        property("age").shouldBeSmallerThanOrEqualTo(20).done()
     ).or(
-        property("author.name").shouldBeEqualTo("hansjovis")
-    );
+        property("author.name").shouldBeEqualTo("hansjovis").done()
+    ).done();
 
 const item = {
     title: "Post title",

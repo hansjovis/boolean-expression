@@ -11,7 +11,9 @@ import {
     StringValue,
     NumberValue,
     InExpression,
-    ArrayValue
+    ArrayValue,
+    Equatable,
+    Comparable
 } from "./BooleanExpression.js";
 import { array, empty, expression, ExpressionBuilder } from "./builder.js";
 import { Token } from "./tokenize.js";
@@ -45,8 +47,9 @@ export function parse(tokens: Token[]): BooleanExpression {
     return builder.done();
 }
 
-function parsePropertyExpression(tokens: Token[]): BooleanExpression {
-    let variable: Property | undefined = undefined;
+function parsePropertyExpression<T extends Comparable<T> | Equatable<T>>(tokens: Token[]): BooleanExpression {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Need to fix Equatable/Comparable conundrum.
+    let variable: Property<any> | undefined = undefined;
     let operator: Operator | undefined = undefined;
     let value: StringValue | NumberValue | ArrayValue | undefined = undefined;
     try {
@@ -89,7 +92,7 @@ function parsePropertyExpression(tokens: Token[]): BooleanExpression {
     }
 }
 
-function parseProperty(token: Token | undefined): Property {
+function parseProperty<T extends Comparable<T> | Equatable<T>>(token: Token | undefined): Property<T> {
     if (token === undefined) {
         throw new ParseError("Expected Property token, but got undefined");
     }

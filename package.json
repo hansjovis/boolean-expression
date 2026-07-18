@@ -8,6 +8,7 @@
   "main": "index.js",
   "type": "module",
   "directories": {
+    "example": "demo",
     "test": "test"
   },
   "scripts": {

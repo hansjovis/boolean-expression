@@ -12,7 +12,10 @@ import {
     SmallerThanExpression, 
     SmallerThanOrEqualToExpression, 
     StringValue,
-    ArrayValue, 
+    ArrayValue,
+    InExpression, 
+    Equatable,
+    Comparable,
 } from "./BooleanExpression.js";
 
 export class BuilderError extends Error {}
@@ -58,8 +61,9 @@ export function empty(): ExpressionBuilder {
     }
 }
 
-export function property(path: string): PropertyBuilder {
-    const prop = new Property(path.split("."));
+export function property<T extends Comparable<T> | Equatable<T>>(path: string): PropertyBuilder {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Need to fix Equatable/Comparable conundrum.
+    const prop = new Property<any>(path.split("."));
     return {
         shouldBeEqualTo: (value: string|number) => shouldBeEqualTo(prop, value),
         shouldNotBeEqualTo: (value: string|number) => shouldNotBeEqualTo(prop, value),
@@ -86,45 +90,52 @@ export function expression(expr: BooleanExpression): ExpressionBuilder {
     };
 }
 
-export function shouldBeEqualTo(prop: Property, value: string|number): ExpressionBuilder {
+export function shouldBeEqualTo<T extends Equatable<T>>(prop: Property<T>, value: string|number): ExpressionBuilder {
     return expression(
         new EqualsExpression(prop, parseValue(value))
     );
 }
 
-export function shouldNotBeEqualTo(prop: Property, value: string|number): ExpressionBuilder {
+export function shouldNotBeEqualTo<T extends Equatable<T>>(prop: Property<T>, value: string|number): ExpressionBuilder {
     return expression(
         new NotEqualsExpression(prop, parseValue(value))
     );
 }
 
-export function shouldBeBiggerThan(prop: Property, value: string|number): ExpressionBuilder {
+export function shouldBeBiggerThan<T extends Comparable<T>>(prop: Property<T>, value: string|number): ExpressionBuilder {
     return expression(
         new BiggerThanExpression(prop, parseValue(value))
     );
 }
 
-export function shouldBeBiggerThanOrEqualTo(prop: Property, value: string|number): ExpressionBuilder {
+export function shouldBeBiggerThanOrEqualTo<T extends Comparable<T>>(prop: Property<T>, value: string|number): ExpressionBuilder {
     return expression(
         new BiggerThanOrEqualToExpression(prop, parseValue(value))
     );
 }
 
-export function shouldBeSmallerThan(prop: Property, value: string|number) {
+export function shouldBeSmallerThan<T extends Comparable<T>>(prop: Property<T>, value: string|number) {
     return expression(
         new SmallerThanExpression(prop, parseValue(value))
     );
 }
 
-export function shouldBeSmallerThanOrEqualTo(prop: Property, value: string|number) {
+export function shouldBeSmallerThanOrEqualTo<T extends Comparable<T>>(prop: Property<T>, value: string|number) {
     return expression(
         new SmallerThanOrEqualToExpression(prop, parseValue(value))
     );
 }
 
-export function shouldBeEqualToOneOf(prop: Property, values: string[] | number[]) {
-    return or(
-        ...values.map((value: string|number) => new EqualsExpression(prop, parseValue(value)))
+export function shouldBeEqualToOneOf<T extends Equatable<T>>(prop: Property<T>, values: string[] | number[]) {
+    const arrayValue = new ArrayValue(values.map((it: string | number) => {
+        if (typeof it === "number")
+            return new NumberValue(it);
+        else
+            return new StringValue(it);
+    }));
+
+    return expression(
+        new InExpression(prop, arrayValue),
     );
 }
 
