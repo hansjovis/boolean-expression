@@ -61,9 +61,8 @@ export function empty(): ExpressionBuilder {
     }
 }
 
-export function property<T extends Comparable<T> | Equatable<T>>(path: string): PropertyBuilder {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Need to fix Equatable/Comparable conundrum.
-    const prop = new Property<any>(path.split("."));
+export function property<T extends Comparable<T> & Equatable<T>>(path: string): PropertyBuilder {
+    const prop = new Property<T>(path.split("."));
     return {
         shouldBeEqualTo: (value: string|number) => shouldBeEqualTo(prop, value),
         shouldNotBeEqualTo: (value: string|number) => shouldNotBeEqualTo(prop, value),

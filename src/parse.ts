@@ -47,9 +47,8 @@ export function parse(tokens: Token[]): BooleanExpression {
     return builder.done();
 }
 
-function parsePropertyExpression<T extends Comparable<T> | Equatable<T>>(tokens: Token[]): BooleanExpression {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Need to fix Equatable/Comparable conundrum.
-    let variable: Property<any> | undefined = undefined;
+function parsePropertyExpression<T extends Comparable<T> & Equatable<T>>(tokens: Token[]): BooleanExpression {
+    let variable: Property<T> | undefined = undefined;
     let operator: Operator | undefined = undefined;
     let value: StringValue | NumberValue | ArrayValue | undefined = undefined;
     try {

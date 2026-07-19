@@ -43,14 +43,13 @@ export class Property<T extends (Comparable<T> | Equatable<T>)> {
         return new Property(str.split("."));
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    evaluate(item: any): ( Comparable<T> | Equatable<T> ) | undefined {
+    evaluate(item: unknown): ( Comparable<T> | Equatable<T> ) | undefined {
         let current = item;
         for (const key of this.path) {
             if (current === undefined || current === null)
                 return undefined;
             if (typeof current === "object" && Object.hasOwn(current, key))
-                current = current[key];
+                current = (current as Record<string, unknown>)[key];
             else
                 return undefined;
         }
